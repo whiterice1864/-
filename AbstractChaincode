@@ -1,0 +1,64 @@
+package chaincode;
+
+import java.util.Arrays;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.hyperledger.java.shim.ChaincodeBase;
+import org.hyperledger.java.shim.ChaincodeStub;
+
+public abstract class AbstractChaincode extends ChaincodeBase {
+	public static final Log log = LogFactory.getLog(AbstractChaincode.class); //新建一个日志
+
+	/*
+	 * 根据设计，区块链将提供签名所需要的信息
+	 * 智能合约将提供以下功能：
+	 * （1）使用者新增init
+	 * （2）删除已有的
+	 * （3）使用者更新节点信息
+	 * （4）使用者根据键值进行查询query*/
+	public static final String FUNCTION_INIT = "init";
+	public static final String FUNCTION_QUERY = "query"; 
+	public static final String FUNCTION_DELET = "delet";
+	public static final String FUNCTION_CHANGE = "change";
+	
+	protected abstract String handleInit(ChaincodeStub stub, String[] args);
+	protected abstract String handleQuery(ChaincodeStub stub, String[] args);
+	protected abstract String handleDelet(ChaincodeStub stub, String[] args);
+	protected abstract String handleChange(ChaincodeStub stub, String[] args);
+	protected abstract String handleOther(ChaincodeStub stub, String function,String[] args); 
+	
+	//重载 run
+	@Override
+	public String run(ChaincodeStub stub, String function, String[] args)
+	{
+		String ret;
+		log.info("Greetings from run(): function -> " + function + " | args -> " + Arrays.toString(args));//反馈系统的当前状态给最终用户
+		switch(function)//根据需求调用不同的方法
+		{
+		case FUNCTION_INIT:
+			ret = handleInit(stub, args);
+		    break;
+		case FUNCTION_QUERY:
+			ret = handleQuery(stub, args);
+			break;
+		case FUNCTION_DELET:
+			ret = handleDelet(stub, args);
+			break;
+		case FUNCTION_CHANGE:
+			ret = handleChange(stub, args);
+			break;
+		default:
+			ret = handleOther(stub,function, args);
+			break;
+		}
+
+		return ret;	
+	}
+	
+	@Override
+	public String query(ChaincodeStub stub, String function, String[] args) {
+	    return handleQuery(stub, args);
+	  }
+
+}
