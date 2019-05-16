@@ -1,0 +1,112 @@
+package chaincode;
+
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.hyperledger.java.shim.ChaincodeStub;
+
+import chaincode.ChaincodeLog;
+import chaincode.AbstractChaincode; //此处具体实现
+
+
+public class ChaincodeLog extends AbstractChaincode{
+	
+	private static final Log  log = LogFactory.getLog(ChaincodeLog.class);
+	public static final String CONTRACT_ID = "SmartContractForSign";
+	public static final String FUNCTION_LOG = "log";
+	public static final String KEY_PREFIX = CONTRACT_ID + "-CLSC-";
+	
+	
+	public static void main(String[] args)
+	{
+		new ChaincodeLog().start(args);
+	}
+	
+	
+	@Override
+	public String getChaincodeID()
+	{
+		return CONTRACT_ID;
+	}
+ 
+	//实现第一个接口
+	@Override
+	public String handleInit(ChaincodeStub stub, String[] args)
+	{
+		String ret;
+		ret = handleLog(stub, args);
+		return ret;
+	}
+	
+	private String handleLog(ChaincodeStub stub, String[] args) {
+	    String ret = null;
+	    String logKey = args[0]; //第一个输入的值是钥匙
+	    String  logMessage = args[1];
+	    log.info("*** Storing log message (K,V) -> (" + KEY_PREFIX + logKey + "," + logMessage + ") ***");//向用户显示输入的键值
+	    stub.putState(KEY_PREFIX + logKey, logMessage);//写入账本
+	    ret = logKey;
+	    return ret;
+	  }
+	
+	//实现第二个接口
+	@Override
+	public String handleQuery(ChaincodeStub stub, String[] args)
+	{
+		StringBuilder sb = new StringBuilder();
+	    int aa = 0;
+	    for (String key : args) {//将输入的值依次给key，当查询数目大于1时用逗号隔开
+	      String logKey = KEY_PREFIX + key;
+	      if (aa++ > 0) {
+	        sb.append(",");
+	      }
+	      String value = stub.getState(logKey);
+	      log.info("*** Query: For key '" + logKey + ", value is '" + value + "' ***");
+	      sb.append(value);
+	    }
+	    return sb.toString();
+	}
+	
+	//实现第三个接口
+	@Override
+	public String handleDelet(ChaincodeStub stub, String[] args) {
+		StringBuilder sb = new StringBuilder();
+	    for (String key : args) {//将输入的值依次给key，当查询数目大于1时用逗号隔开
+	      String logKey = KEY_PREFIX + key;
+	      String value = stub.getState(logKey);
+	      stub.delState(logKey);
+	      log.info("*** Delet: For key '" + logKey + ", value is '" + value + "' ***");
+	      sb.append(value);
+	    }
+	    return sb.toString();
+	}
+	
+	//实现第四个接口
+	@Override
+	public String handleChange(ChaincodeStub stub, String[] args)
+	{
+		String key = args[0];
+		String value = args[1];
+		String logkey = KEY_PREFIX + key;
+		stub.delState(logkey);
+		stub.putState(logkey, value);
+		return  value;
+	}
+
+	
+	//实现其他接口
+	@Override
+	protected String handleOther(ChaincodeStub stub, String function, String[] args) {
+	    String ret;
+	    switch (function) {
+	    case FUNCTION_LOG:
+	      ret = handleLog(stub, args);
+	      break;
+	    default:
+	      ret = "NO HANDLER FOUND FOR FUNCTION '" + function + "'";
+	    }
+	    return ret;
+	  }
+	
+		
+
+}
